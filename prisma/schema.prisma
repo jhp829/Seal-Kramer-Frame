@@ -1,0 +1,28 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model Round {
+  id       Int     @id @default(autoincrement())
+  question String
+  yes      Int     @default(0)
+  no       Int     @default(0)
+  votes    Votes[]
+}
+
+model Votes {
+  id      Int    @id @default(autoincrement())
+  roundId Int
+  userId  String
+  round   Round  @relation(fields: [roundId], references: [id])
+
+  @@unique([roundId, userId]) // Ensures a user can vote only once per round
+}

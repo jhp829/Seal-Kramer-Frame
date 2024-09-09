@@ -5,6 +5,9 @@ import { devtools } from "frog/dev";
 // import { neynar } from 'frog/hubs'
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
+import { getRoundById } from "../services/roundService";
+
+// import { getRoundById } from "../services/roundService";
 
 const app = new Frog({
   assetsPath: "/",
@@ -62,16 +65,17 @@ app.frame("/", (c) => {
       <TextInput placeholder="Enter your favorite movie..." />,
       <Button value="Yes">Yes</Button>,
       <Button value="No">No</Button>,
-      <Button>GO TO NEXT FRAME</Button>,
+      <Button>GO TO ROUND SELECTION</Button>,
       status === "response" && <Button.Reset>Reset</Button.Reset>,
     ],
   });
 });
 
 app.frame("/second", (c) => {
-  const { buttonValue, inputText, status } = c;
-  const fruit = inputText || buttonValue;
+  const { inputText } = c;
+  const roundId = inputText;
   return c.res({
+    action: `/round/${roundId}`,
     image: (
       <div
         style={{
@@ -86,6 +90,34 @@ app.frame("/second", (c) => {
         }}
       >
         WELCOME TO THE SECOND FRAME
+      </div>
+    ),
+    intents: [
+      <TextInput placeholder="Enter round Id..." />,
+      <Button>GO TO ROUND</Button>,
+    ],
+  });
+});
+
+app.frame("/round/:id", async (c) => {
+  const roundId = c.req.param("roundId");
+
+  const round = await getRoundById(Number(roundId));
+  return c.res({
+    image: (
+      <div
+        style={{
+          color: "black",
+          fontSize: 60,
+          fontStyle: "normal",
+          letterSpacing: "-0.025em",
+          lineHeight: 1.4,
+          marginTop: 30,
+          padding: "0 120px",
+          whiteSpace: "pre-wrap",
+        }}
+      >
+        {round.question}
       </div>
     ),
     intents: [
