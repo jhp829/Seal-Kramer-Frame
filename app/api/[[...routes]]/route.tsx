@@ -6,36 +6,39 @@ import { neynar, pinata } from "frog/hubs";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
 import { getRoundById } from "../services/roundService";
+import { fetchVote, undoVote, vote } from "../services/voteService";
 
 const app = new Frog({
   assetsPath: "/",
   basePath: "/api",
-  // Supply a Hub to enable frame verification.
   hub: pinata(),
-  title: "Frog Frame",
+  title: "Kramer-like frame",
 });
 
 // Uncomment to use Edge Runtime
 // export const runtime = 'edge'
 
-// app.frame("/", (c) => {
-//   return c.res({
-//     action: "/round",
-//     image: <div>DEFAULT PAGE</div>,
-//     intents: [<Button>GO TO ROUND</Button>],
-//   });
-// });
-
 app.frame("/", async (c) => {
-  const { frameData, verified } = c;
-  const roundId = frameData?.inputText || "1";
+  const { buttonValue, frameData } = c;
+  const roundId = 1;
 
-  console.log("roundID", roundId);
+  const myVote = await fetchVote(roundId, String(frameData?.fid));
+  console.log("MYVOTE", myVote);
+  let voted = !!myVote;
 
-  const round = await getRoundById(Number(roundId));
+  if (buttonValue && !voted) {
+    await vote(roundId, String(frameData?.fid), buttonValue === "Yes");
+    voted = true;
+  }
+
+  if (buttonValue === "Undo") {
+    await undoVote(roundId, String(frameData?.fid));
+    voted = false;
+  }
+
+  const round = await getRoundById(roundId);
 
   return c.res({
-    action: "/select-round",
     image: (
       <div
         style={{
@@ -64,29 +67,39 @@ app.frame("/", async (c) => {
           }}
         >
           <div style={{ fontSize: 30, marginBottom: 70 }}>{round.question}</div>
-          <div style={{ display: "flex", fontSize: 25, color: "lightgray" }}>
-            {`Positions ${verified ? "YES" : "NO"} ${
-              frameData?.fid ? frameData.fid : "NO ID"
-            }`}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 25,
-              color: "lightgray",
-              marginTop: 10,
-            }}
-          >
-            {`Yes: ${round.yes !== 0 ? round.yes : "0"},
-              No: ${round.no !== 0 ? round.no : "0"}`}
-          </div>
+          {voted && (
+            <>
+              <div
+                style={{ display: "flex", fontSize: 25, color: "lightgray" }}
+              >
+                {`You voted: ${myVote?.voteType ? "yes" : "no"}`}
+              </div>
+              <div
+                style={{ display: "flex", fontSize: 25, color: "lightgray" }}
+              >
+                Positions
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: 25,
+                  color: "lightgray",
+                  marginTop: 10,
+                }}
+              >
+                {`Yes: ${round.yes !== 0 ? round.yes : "0"},
+                  No: ${round.no !== 0 ? round.no : "0"}`}
+              </div>
+            </>
+          )}
         </div>
       </div>
     ),
     intents: [
-      <Button value="Yes">Yes</Button>,
-      <Button value="No">No</Button>,
-      <Button>Round selection</Button>,
+      !voted && <Button value="Yes">Yes</Button>,
+      !voted && <Button value="No">No</Button>,
+      voted && <Button value="Undo">Undo Vote</Button>,
+      // <Button action="/select-round">Round selection</Button>,
     ],
   });
 });
