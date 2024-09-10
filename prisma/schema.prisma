@@ -19,10 +19,11 @@ model Round {
 }
 
 model Votes {
-  id      Int    @id @default(autoincrement())
-  roundId Int
-  userId  String
-  round   Round  @relation(fields: [roundId], references: [id])
+  id       Int     @id @default(autoincrement())
+  roundId  Int
+  userId   String
+  voteType Boolean
+  round    Round   @relation(fields: [roundId], references: [id])
 
   @@unique([roundId, userId]) // Ensures a user can vote only once per round
 }

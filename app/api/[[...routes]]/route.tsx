@@ -2,78 +2,98 @@
 
 import { Button, Frog, TextInput } from "frog";
 import { devtools } from "frog/dev";
-// import { neynar } from 'frog/hubs'
+import { neynar, pinata } from "frog/hubs";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
 import { getRoundById } from "../services/roundService";
-
-// import { getRoundById } from "../services/roundService";
 
 const app = new Frog({
   assetsPath: "/",
   basePath: "/api",
   // Supply a Hub to enable frame verification.
-  // hub: neynar({ apiKey: 'NEYNAR_FROG_FM' })
+  hub: pinata(),
   title: "Frog Frame",
 });
 
 // Uncomment to use Edge Runtime
 // export const runtime = 'edge'
 
-app.frame("/", (c) => {
-  const { buttonValue, inputText, status } = c;
-  const fruit = inputText || buttonValue;
+// app.frame("/", (c) => {
+//   return c.res({
+//     action: "/round",
+//     image: <div>DEFAULT PAGE</div>,
+//     intents: [<Button>GO TO ROUND</Button>],
+//   });
+// });
+
+app.frame("/", async (c) => {
+  const { frameData, verified } = c;
+  const roundId = frameData?.inputText || "1";
+
+  console.log("roundID", roundId);
+
+  const round = await getRoundById(Number(roundId));
+
   return c.res({
-    action: "/second",
+    action: "/select-round",
     image: (
       <div
         style={{
-          alignItems: "center",
-          background:
-            status === "response"
-              ? "linear-gradient(to right, #432889, #17101F)"
-              : "black",
-          backgroundSize: "100% 100%",
           display: "flex",
-          flexDirection: "column",
-          flexWrap: "nowrap",
-          height: "100%",
           justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "white",
           textAlign: "center",
           width: "100%",
         }}
       >
         <div
           style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "70%",
+            width: "80%",
+            background: "rgba(0, 0, 0, 0.7)",
             color: "white",
-            fontSize: 60,
-            fontStyle: "normal",
-            letterSpacing: "-0.025em",
-            lineHeight: 1.4,
-            marginTop: 30,
-            padding: "0 120px",
-            whiteSpace: "pre-wrap",
+            padding: "30px",
+            borderRadius: "15px",
+            textAlign: "center",
           }}
         >
-          {status === "response"
-            ? `Nice choice.${fruit ? ` ${fruit.toUpperCase()}!!` : ""}`
-            : "Welcome!"}
+          <div style={{ fontSize: 30, marginBottom: 70 }}>{round.question}</div>
+          <div style={{ display: "flex", fontSize: 25, color: "lightgray" }}>
+            {`Positions ${verified ? "YES" : "NO"} ${
+              frameData?.fid ? frameData.fid : "NO ID"
+            }`}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 25,
+              color: "lightgray",
+              marginTop: 10,
+            }}
+          >
+            {`Yes: ${round.yes !== 0 ? round.yes : "0"},
+              No: ${round.no !== 0 ? round.no : "0"}`}
+          </div>
         </div>
       </div>
     ),
     intents: [
-      <TextInput placeholder="Enter your favorite movie..." />,
       <Button value="Yes">Yes</Button>,
       <Button value="No">No</Button>,
-      <Button>GO TO ROUND SELECTION</Button>,
-      status === "response" && <Button.Reset>Reset</Button.Reset>,
+      <Button>Round selection</Button>,
     ],
   });
 });
 
-app.frame("/second", (c) => {
+app.frame("/select-round", (c) => {
   return c.res({
-    action: `/round`,
+    action: `/`,
     image: (
       <div
         style={{
@@ -87,77 +107,12 @@ app.frame("/second", (c) => {
           whiteSpace: "pre-wrap",
         }}
       >
-        WELCOME TO THE SECOND FRAME
+        Round selection
       </div>
     ),
     intents: [
       <TextInput placeholder="Enter round Id..." />,
       <Button>GO TO ROUND</Button>,
-    ],
-  });
-});
-
-app.frame("/round", async (c) => {
-  const { frameData } = c;
-  console.log("frameData", frameData);
-  const roundId = frameData?.inputText;
-
-  console.log("roundId", roundId);
-
-  const round = await getRoundById(Number(roundId));
-  return c.res({
-    action: "/",
-    image: (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh", // Full viewport height to center the content
-          backgroundColor: "white", // White background
-          textAlign: "center",
-          width: "100%", // Full width
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column", // Stack items vertically
-            justifyContent: "center", // Center content vertically
-            alignItems: "center", // Center content horizontally
-            height: "70%", // Adjust height to fit content
-            width: "50%", // Adjust width to fit content
-            background: "rgba(0, 0, 0, 0.7)", // Semi-transparent black background
-            color: "white", // White text for contrast
-            padding: "30px", // Increased padding for more space
-            borderRadius: "15px", // Larger radius for smoother corners
-            textAlign: "center", // Center the text
-          }}
-        >
-          <div style={{ fontSize: 40, marginBottom: 30 }}>{round.question}</div>
-          <div style={{ display: "flex", fontSize: 30, color: "lightgray" }}>
-            {`Total Votes: ${
-              round.yes + round.no !== 0 ? round.yes + round.no : "0"
-            }`}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 30,
-              color: "lightgray",
-              marginTop: 10,
-            }}
-          >
-            {`Yes: ${round.yes !== 0 ? round.yes : "0"},
-              No: ${round.no !== 0 ? round.no : "0"})`}
-          </div>
-        </div>
-      </div>
-    ),
-    intents: [
-      <Button value="Yes">Yes</Button>,
-      <Button value="No">No</Button>,
-      <Button>START OVER</Button>,
     ],
   });
 });

@@ -11,8 +11,6 @@ export const getRoundById = async (id: number): Promise<Round> => {
       throw new Error(`Round with id ${id} not found`);
     }
 
-    console.log("round", round);
-
     return round;
   } catch (error) {
     console.error(error);
