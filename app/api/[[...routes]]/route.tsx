@@ -23,7 +23,6 @@ app.frame("/", async (c) => {
   const roundId = 1;
 
   const myVote = await fetchVote(roundId, String(frameData?.fid));
-  console.log("MYVOTE", myVote);
   let voted = !!myVote;
 
   if (buttonValue && !voted) {
