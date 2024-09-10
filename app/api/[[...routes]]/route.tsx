@@ -72,10 +72,8 @@ app.frame("/", (c) => {
 });
 
 app.frame("/second", (c) => {
-  const { inputText } = c;
-  const roundId = inputText;
   return c.res({
-    action: `/round/${roundId}`,
+    action: `/round`,
     image: (
       <div
         style={{
@@ -99,33 +97,67 @@ app.frame("/second", (c) => {
   });
 });
 
-app.frame("/round/:id", async (c) => {
-  const roundId = c.req.param("roundId");
+app.frame("/round", async (c) => {
+  const { frameData } = c;
+  console.log("frameData", frameData);
+  const roundId = frameData?.inputText;
+
+  console.log("roundId", roundId);
 
   const round = await getRoundById(Number(roundId));
   return c.res({
+    action: "/",
     image: (
       <div
         style={{
-          color: "black",
-          fontSize: 60,
-          fontStyle: "normal",
-          letterSpacing: "-0.025em",
-          lineHeight: 1.4,
-          marginTop: 30,
-          padding: "0 120px",
-          whiteSpace: "pre-wrap",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh", // Full viewport height to center the content
+          backgroundColor: "white", // White background
+          textAlign: "center",
+          width: "100%", // Full width
         }}
       >
-        {round.question}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column", // Stack items vertically
+            justifyContent: "center", // Center content vertically
+            alignItems: "center", // Center content horizontally
+            height: "70%", // Adjust height to fit content
+            width: "50%", // Adjust width to fit content
+            background: "rgba(0, 0, 0, 0.7)", // Semi-transparent black background
+            color: "white", // White text for contrast
+            padding: "30px", // Increased padding for more space
+            borderRadius: "15px", // Larger radius for smoother corners
+            textAlign: "center", // Center the text
+          }}
+        >
+          <div style={{ fontSize: 40, marginBottom: 30 }}>{round.question}</div>
+          <div style={{ display: "flex", fontSize: 30, color: "lightgray" }}>
+            {`Total Votes: ${
+              round.yes + round.no !== 0 ? round.yes + round.no : "0"
+            }`}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 30,
+              color: "lightgray",
+              marginTop: 10,
+            }}
+          >
+            {`Yes: ${round.yes !== 0 ? round.yes : "0"},
+              No: ${round.no !== 0 ? round.no : "0"})`}
+          </div>
+        </div>
       </div>
     ),
     intents: [
-      <TextInput placeholder="Enter your favorite movie..." />,
       <Button value="Yes">Yes</Button>,
       <Button value="No">No</Button>,
-      <Button>GO TO NEXT FRAME</Button>,
-      status === "response" && <Button.Reset>Reset</Button.Reset>,
+      <Button>START OVER</Button>,
     ],
   });
 });
